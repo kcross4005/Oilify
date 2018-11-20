@@ -5,9 +5,27 @@
 # gimp -idf --batch-interpreter python-fu-eval -b "import sys;sys.path=['.']+sys.path;import oilify;oilify.run('./images')" -b "pdb.gimp_quit(1)"
 
 import os,glob,sys,time
+import Tkinter as tk
+from tkFont import Font
+from picamera import PiCamera
+from time import sleep
 from gimpfu import *
+from subprocess import call
+
+camera = PiCamera()
+camera.rotation=90
+camera.resolution = (1200,900)
+camera.preview_fullscreen=False
+camera.preview_window=(90,100, 320, 240)
+camera.start_preview(alpha=200)
+sleep(2)
+
+win=tk.Tk()
+win.title("Using tkinter")
+myFont=Font(family='Helvetica', size=12, weight='bold')
 
 def process(infile):
+    start=time.time()
     print "Processing file %s " % infile
     # load the image
     image = pdb.file_jpeg_load(infile,infile)
@@ -60,7 +78,8 @@ def process(infile):
     # Now start working on the line layer
     # 11) Put the line layer at the top of the image layer stack
     pdb.gimp_image_insert_layer(image, line_layer, image.layers[0].parent, 0) # parent, 1=losition 1 within image
-
+    #DEBUG-pdb.gimp_xcf_save(0, image, drawable, '/home/pi/Documents/batch/image1.xcf', '/home/pi/Documents/batch/image1.xcf')
+    
     # 12) Draw the outlines of the shape
     # Filter - Edge-Detect - Neon
     # Radius: 0.5x, Intensity: 0%
@@ -90,24 +109,49 @@ def process(infile):
     # Layer Dialog box - select Line Layer, choose Overlay Mode
     pdb.gimp_layer_set_mode(line_layer, 5)   # 5=mode = OVERLAY-MODE
     
+    # Add the overlay to image
+    overlay_layer = pdb.gimp_file_load_layer(image, '/home/pi/Documents/batch/OverlayWide.png')
+    pdb.gimp_image_insert_layer(image, overlay_layer, image.layers[0].parent, 0) # parent, 1=losition 1 within image
+    #DEBUG-pdb.gimp_xcf_save(0, image, drawable, '/home/pi/Documents/batch/image2.xcf', '/home/pi/Documents/batch/image2.xcf')
+   
+    # Flatten all layers into a single layer
+    drawable = pdb.gimp_image_flatten(image)
+    
     # output processed image
     outfile=os.path.join('processed',os.path.basename(infile))
     outfile=os.path.join(os.path.dirname(infile),outfile)
     print "Saving to %s" % outfile
     #pdb.file_jpeg_save(image, drawable, outfile, outfile, "0.5",0,1,0,"",0,1,0,0)
-    pdb.file_jpeg_save(image, drawable, outfile, outfile,0.9, 0, 1, 1, \
-                       'Hi There!', 2, 1, 0, 0)
+    pdb.file_jpeg_save(image, drawable, outfile, outfile, 0.9, 0, 1, 1, "Oiled", 2, 1, 0, 0)
     print "Saved to %s" % outfile
+    #DEBUG-pdb.gimp_xcf_save(0, image, drawable, '/home/pi/Documents/batch/image3.xcf', '/home/pi/Documents/batch/image3.xcf')
+
+    # Print the image
+    # pdb.file_print_gtk(image)
+    
+    # Send the image to Dropbox
+    photofile = "/home/pi/Dropbox-Uploader/dropbox_uploader.sh upload " + outfile + " " + os.path.basename(infile)
+    print "photofile=" + photofile
+    call ([photofile], shell=True)  
+    
+    end=time.time()
+    print "It took: %.2f seconds" % (end-start)
     pdb.gimp_image_delete(image)
 
+def takePicture():
+    filename = "/home/pi/Documents/batch/images/image-" + time.strftime("%Y%m%d-%H%M%S") + ".jpg"
+    camera.capture(filename)
+    process(filename)
+
+def exitProgram():
+    sys.exit()
+    
 def run(directory):
-    start=time.time()
-    print "Running on directory \"%s\"" % directory
-#   os.mkdir(os.path.join(directory,'processed'))
-    for infile in glob.glob(os.path.join(directory, '*.jpg')):
-        process(infile)
-        end=time.time()
-        print "Finished, total processing time: %.2f seconds" % (end-start)
+    ledButton=tk.Button(win, text='Take Picture', font=myFont, command=takePicture, bg='bisque2', height=1, width=24)
+    ledButton.grid(row=0, sticky=tk.NSEW)
+    ledButton=tk.Button(win, text='Exit', font=myFont, command=exitProgram, bg='cyan', height=1, width=24)
+    ledButton.grid(row=1, sticky=tk.E)
+    tk.mainloop()
 
 if __name__ == "__main__":
         print "Running as __main__ with args: %s" % sys.argv
