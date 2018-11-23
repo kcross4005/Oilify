@@ -11,6 +11,7 @@ from picamera import PiCamera
 from time import sleep
 from gimpfu import *
 from subprocess import call
+from functools import partial
 
 camera = PiCamera()
 camera.rotation=90
@@ -24,8 +25,8 @@ win=tk.Tk()
 win.title("Using tkinter")
 myFont=Font(family='Helvetica', size=12, weight='bold')
 
-def process(infile):
-    start=time.time()
+def process(infile, outfile):
+    #start=time.time()
     print "Processing file %s " % infile
     # load the image
     image = pdb.file_jpeg_load(infile,infile)
@@ -118,8 +119,8 @@ def process(infile):
     drawable = pdb.gimp_image_flatten(image)
     
     # output processed image
-    outfile=os.path.join('processed',os.path.basename(infile))
-    outfile=os.path.join(os.path.dirname(infile),outfile)
+    ##outfile=os.path.join('processed',os.path.basename(infile))
+    ##outfile=os.path.join(os.path.dirname(infile),outfile)
     print "Saving to %s" % outfile
     #pdb.file_jpeg_save(image, drawable, outfile, outfile, "0.5",0,1,0,"",0,1,0,0)
     pdb.file_jpeg_save(image, drawable, outfile, outfile, 0.9, 0, 1, 1, "Oiled", 2, 1, 0, 0)
@@ -130,26 +131,39 @@ def process(infile):
     # pdb.file_print_gtk(image)
     
     # Send the image to Dropbox
-    photofile = "/home/pi/Dropbox-Uploader/dropbox_uploader.sh upload " + outfile + " " + os.path.basename(infile)
+    #photofile = "/home/pi/Dropbox-Uploader/dropbox_uploader.sh upload " + outfile + " " + os.path.basename(outfile)
+    #print "photofile=" + photofile
+    #call ([photofile], shell=True)  
+    
+    #end=time.time()
+    #print "It took: %.2f seconds" % (end-start)
+    pdb.gimp_image_delete(image)
+
+def takePicture(home):
+    start=time.time()
+    now = time.strftime("%Y%m%d-%H%M%S")
+    infile = home + "/" + now + "-in.jpg"
+    outfile = home + "/" + now + "-out.jpg"
+    camera.capture(infile)
+    process(infile, outfile)
+    
+    # Send the image to Dropbox
+    photofile = "/home/pi/Dropbox-Uploader/dropbox_uploader.sh upload " + outfile + " " + os.path.basename(outfile)
     print "photofile=" + photofile
-    call ([photofile], shell=True)  
+    call ([photofile], shell=True) 
     
     end=time.time()
     print "It took: %.2f seconds" % (end-start)
-    pdb.gimp_image_delete(image)
-
-def takePicture():
-    filename = "/home/pi/Documents/batch/images/image-" + time.strftime("%Y%m%d-%H%M%S") + ".jpg"
-    camera.capture(filename)
-    process(filename)
 
 def exitProgram():
+    pdb.gimp_quit(1)
     sys.exit()
     
-def run(directory):
-    ledButton=tk.Button(win, text='Take Picture', font=myFont, command=takePicture, bg='bisque2', height=1, width=24)
+def run(home):
+    #print "home=" + home
+    ledButton=tk.Button(win, text='Take Picture', font=myFont, command=partial(takePicture, home), bg='bisque2', height=8, width=24)
     ledButton.grid(row=0, sticky=tk.NSEW)
-    ledButton=tk.Button(win, text='Exit', font=myFont, command=exitProgram, bg='cyan', height=1, width=24)
+    ledButton=tk.Button(win, text='Exit', font=myFont, command=exitProgram, bg='cyan', height=8, width=24)
     ledButton.grid(row=1, sticky=tk.E)
     tk.mainloop()
 

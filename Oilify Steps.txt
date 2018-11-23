@@ -1,0 +1,42 @@
+02 Set brightness and contract +10%
+03 Filter - Enhance - Unsharp Mask; Radius: 1x, Amount: 1 Threshold: 0
+04 Colors - Posterize; Colors 12
+05 Layer - Transparency; - Add Alphachannel
+06 Duplicate Layer, hide upper layer
+07 Filter - Blur - Gaussian Blur; Radius: 1x, Method: RLE
+08 “Filter” → “Artistic” → “Gimpressionist”;
+
+    Presets
+    → Feathers
+
+    Paper
+    → Scale: 1x
+
+    Orientation
+    → Directions: 6
+    → Start Angle: 0
+    → Angle Span: 120
+    → Orientation: Adaptive
+
+    Size
+    → Sizes: 4
+    → Minimum Size: 3x
+    → Maximum Size: 8x
+    → Size: Adaptive
+
+    Placement
+    → Placement: Randomly
+    → Stroke Density: 36
+09 Colors - Color to Transparency; Color #bababa
+10 Add a new layer; Filling: White
+10a Move this layer to the very bottom
+11 Unhide hidden layer
+12 Filter - Find edges - Neon; Radius: 0.5x INtensity: 0%
+13 Colors - Desaturate; Average
+14 Colors - Invert
+15 Colors - Threshold
+17 Filter - Artistic - VanGogh (LIC) (Maybe Skip)
+18 Color - Color to Transparency; Color: ffffff
+20 Set Overlay fo rthe active Layer
+21 Write image out to a file
+
